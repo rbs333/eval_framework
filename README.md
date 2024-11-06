@@ -119,6 +119,11 @@ poetry install
 poetry run uvicorn label_app.main:app --host 0.0.0.0 --port 8000
 ```
 
+Locally with just uvicorn
+```
+uvicorn label_app.main:app --host 0.0.0.0 --port 8000
+```
+
 Note: if you run locally need to run an instance of Redis. The easiest way to do this is with the following command: `docker run -d --name redis -p 6379:6379 -p 8001:8001 redis/redis-stack:latest`
 
 ## Populating the index

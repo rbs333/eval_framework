@@ -20,17 +20,21 @@ load_dotenv()
 # make sure model used matches the dimensions of the schema
 # if in .env file will load from there otherwise will default to the provided
 SCHEMA_PATH = os.getenv("SCHEMA_PATH", "label_app/schema/index_schema.yaml")
+# cached_models/models--sentence-transformers--all-MiniLM-L6-v2
+# sentence-transformers/all-MiniLM-L6-v2
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # these need to correspond to the fields within the schema for the optimization to work
 ID_FIELD_NAME = os.getenv("ID_FIELD_NAME", "chunk_id")
 CHUNK_FIELD_NAME = os.getenv("CHUNK_FIELD_NAME", "content")
-CACHE_FOLDER = os.getenv("MODEL_CACHE", "")
+CACHE_FOLDER = os.getenv("MODEL_CACHE", "cached_models")
 STATIC_FOLDER = os.getenv("STATIC_FOLDER", "label_app/static")
 
 if CACHE_FOLDER:
-    emb_model = HFTextVectorizer(EMBEDDING_MODEL, cache_folder=f"../{CACHE_FOLDER}")
+    print(f"{CACHE_FOLDER} {os.path.isdir(CACHE_FOLDER)=}")
+
+    emb_model = HFTextVectorizer(EMBEDDING_MODEL, cache_folder=CACHE_FOLDER)
 else:
     # HF model currently but could swap for any available with redisvl Vectorizer
     emb_model: BaseVectorizer = HFTextVectorizer(EMBEDDING_MODEL)
@@ -48,6 +52,8 @@ LABELED_DATA_KEY = f"{schema_dict['index']['prefix']}:labeled_items"
 # create an index from schema and the client
 index = SearchIndex.from_yaml(SCHEMA_PATH)
 index.set_client(client)
+print(f"{SCHEMA_PATH=} {REDIS_URL=}")
+print(index.schema)
 
 # Init app and set cors for local tool
 app = FastAPI()
@@ -84,13 +90,16 @@ class IndexInfo(BaseModel):
 @app.get("/index_info")
 async def index_info():
     try:
+        print("hello1")
         info = index.info()
+        print("hello2")
         return {
             **schema_dict,
             "labeled_data_key": LABELED_DATA_KEY,
             "num_docs": info["num_docs"],
         }
     except Exception as e:
+        print(e)
         return {
             "index": {
                 "name": "couldn't load index",
